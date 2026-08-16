@@ -1,0 +1,9 @@
+# dsh-subagent-model-picker bundle patch
+#
+# `dsh.bundle.patch` layer of the package: when the package is listed in the
+# profile's `dsh.profile.bundles` (and installed as a dependency), the loader
+# merges this single insert of the plugin row. The package name resolves the
+# host half (main) and the client half (exports["./client"]).
+- insert:
+    - id: subagent-model-picker
+      name: 'dsh-subagent-model-picker'
