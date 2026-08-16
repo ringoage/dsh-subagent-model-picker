@@ -89,14 +89,6 @@ dependency and list it in `dsh.profile.bundles`:
 Then restart the harness. For a local checkout use a `link:` dependency pointing
 at this directory.
 
-### From npm
-
-```sh
-npm install dsh-subagent-model-picker
-```
-
-…once the package is published to the npm registry.
-
 ## Usage
 
 To the left of the main model selector you will see **Subagent Model**

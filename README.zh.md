@@ -81,14 +81,6 @@ dsh plugin --profile web add github:ringoage/dsh-subagent-model-picker
 
 然后重启 harness。本地开发可用 `link:` 依赖指向本目录。
 
-### 从 npm
-
-```sh
-npm install dsh-subagent-model-picker
-```
-
-……待包发布到 npm registry 后即可使用。
-
 ## 使用
 
 主模型选择器左侧会出现 **子代理模型**。选择一个模型（若提供，再选**思考程度**），
