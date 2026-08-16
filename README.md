@@ -59,6 +59,17 @@ Two halves cooperate without touching the apiProxy settings whitelist:
 
 ## Install
 
+### One-liner (GitHub, market-compatible)
+
+```sh
+dsh plugin --profile web add github:ringoage/dsh-subagent-model-picker
+```
+
+This is the same `github:` install path the DSH plugin market uses, so it can be
+installed straight from this repository.
+
+### Manual (edit the profile)
+
 In your web profile (`.dsh/profiles/web/package.json`), add the package as a
 dependency and list it in `dsh.profile.bundles`:
 
@@ -76,8 +87,15 @@ dependency and list it in `dsh.profile.bundles`:
 ```
 
 Then restart the harness. For a local checkout use a `link:` dependency pointing
-at this directory, or `npm install` / `pnpm add dsh-subagent-model-picker` after
-publishing it to a registry.
+at this directory.
+
+### From npm
+
+```sh
+npm install dsh-subagent-model-picker
+```
+
+…once the package is published to the npm registry.
 
 ## Usage
 

@@ -53,6 +53,16 @@
 
 ## 安装
 
+### 一行命令（GitHub，兼容插件市场）
+
+```sh
+dsh plugin --profile web add github:ringoage/dsh-subagent-model-picker
+```
+
+这就是插件市场使用的 `github:` 安装路径，可直接从本仓库安装。
+
+### 手动（编辑 profile）
+
 在你的 web profile（`.dsh/profiles/web/package.json`）中，把包加为依赖并列入
 `dsh.profile.bundles`：
 
@@ -69,8 +79,15 @@
 }
 ```
 
-然后重启 harness。本地开发可用 `link:` 依赖指向本目录；发布到 registry 后可用
-`npm install` / `pnpm add dsh-subagent-model-picker`。
+然后重启 harness。本地开发可用 `link:` 依赖指向本目录。
+
+### 从 npm
+
+```sh
+npm install dsh-subagent-model-picker
+```
+
+……待包发布到 npm registry 后即可使用。
 
 ## 使用
 
