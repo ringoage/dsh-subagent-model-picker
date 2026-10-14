@@ -53,9 +53,11 @@ Two halves cooperate without touching the apiProxy settings whitelist:
 2. **Persistence + transport** go through a **Typert Remote service**
    (`subagent-model-picker`, wire namespace `subagent-model-picker`) exposing
    `get` / `set` / `clear`. The client half mounts the Remote contribution
-   (`ctx.remote.$mount`) and calls `remote.subagent-model-picker.*`; the service
-   persists the `sessionId -> { provider, model, reasoningEffort? }` map
-   host-side, so the apiProxy `exposedNamespaces()` whitelist is never consulted.
+   (`ctx.remote.$mount`) and calls `remote.subagent-model-picker.*`. The host
+   stores the `sessionId -> { provider, model, reasoningEffort? }` map in this
+   profile entry's volatile `selections` Config field through the current DSH
+   Settings service, so the apiProxy `exposedNamespaces()` whitelist is never
+   consulted.
 
 ## Install
 
