@@ -26,7 +26,7 @@ visible at a glance, and applies deterministically to **every** subagent path.
 - **Manual** — you choose; not a policy, not the model itself.
 - **Visual** — a dropdown beside the main model seat (hover pill + click-outside-to-close + Escape).
 - **Predictable** — the selection is per-session state; every child gets exactly what you picked.
-- **Global coverage** — one host-side `agent/request` listener covers `subagent`, `subagent_fork`, and workflow fan-out children at any depth.
+- **Global coverage** — host-side selection covers `subagent`, `subagent_fork`, and workflow fan-out children at any depth.
 - **Reasoning effort** — models that expose effort levels (e.g. `off` / `high` / `max`) get a matching "Thinking effort" menu.
 - **Inherit by default** — subagents stay on the main model until you opt in.
 - **Per-session + durable** — the choice follows the session and survives restart.
@@ -43,19 +43,31 @@ the picker to override a specific session manually — or the other way around.
 
 Two halves cooperate without touching the apiProxy settings whitelist:
 
-1. **Host** (`lib/index.js`) registers one `agent/request` waterfall listener.
-   `dsh-scope` admits events *up* the scope chain, so this host-root listener
-   sees every agent's requests; a child is recognised by
-   `agent.options.subagentDepth >= 1`. It walks the parent chain to the root
-   session and overrides `{ provider, model, reasoningEffort? }` only for
-   subagents.
+1. **Host** (`lib/index.js`) registers `agent/created` and
+   `agent/inbox/inserted` listeners that call `agent.model.select()` on child
+   agents. `dsh-scope` admits events *up* the scope chain, so this host-root
+   listener sees every agent's lifecycle; a child is recognised from its
+   durable Session header (`origin === 'subagent'` or `delegationDepth >= 1`),
+   which survives a cold resume — `AgentOptions.subagentDepth` does not, since
+   a resumed child is rebuilt from its descriptor without it. The listener
+   walks the parent chain to the root session and selects the picked
+   `{ provider, model, reasoningEffort? }` there.
+
+   Selection must happen **before step preparation**: DSH freezes each step's
+   model before the (deprecated) `agent/request` waterfall and rejects
+   provider/model/effort changes proposed there with
+   `agent/request proposed "X" after step preparation fixed "Y"`. Calling
+   `agent.model.select()` from an earlier event is the supported replacement —
+   the plugin no longer touches `agent/request`.
 
 2. **Persistence + transport** go through a **Typert Remote service**
    (`subagent-model-picker`, wire namespace `subagent-model-picker`) exposing
    `get` / `set` / `clear`. The client half mounts the Remote contribution
-   (`ctx.remote.$mount`) and calls `remote.subagent-model-picker.*`; the service
-   persists the `sessionId -> { provider, model, reasoningEffort? }` map
-   host-side, so the apiProxy `exposedNamespaces()` whitelist is never consulted.
+   (`ctx.remote.$mount`) and calls `remote.subagent-model-picker.*`. The host
+   stores the `sessionId -> { provider, model, reasoningEffort? }` map in this
+   profile entry's volatile `selections` Config field through the current DSH
+   Settings service, so the apiProxy `exposedNamespaces()` whitelist is never
+   consulted.
 
 ## Install
 
@@ -108,13 +120,18 @@ every subagent spawned from that session uses it. Choose **Inherit main model
 
 ## Development
 
-- `lib/index.js` — host half (Remote service + `agent/request` routing).
+- `lib/index.js` — host half (Remote service + child model selection).
 - `lib/client.js` — client half (slot UI + Remote contribution + locale).
 - `cordis.patch.yml` — the `dsh.bundle.patch` insert that mounts the plugin row.
+- `test/host.test.mjs` — regression tests (`npm test`, or `node --test test/host.test.mjs`).
 
 The Remote service runs in **SRC mode**: methods are marked with the
 `@Remote(name)` contract applied in plain JS (no generated `typert.host.js`),
 and the client contribution ships hand-written strict descriptors.
+
+Host changes are picked up by the running harness only after a DSH restart:
+the profile loader imports each plugin module once, and host-side hot reload
+watches profile configuration, not plugin sources.
 
 ## License
 

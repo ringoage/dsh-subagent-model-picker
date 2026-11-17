@@ -24,7 +24,7 @@
 - **手动** — 你来选；不是策略，也不是模型自己。
 - **可视化** — 主模型座旁的下拉（悬停胶囊 + 点击外部收起 + Esc）。
 - **可预测** — 选择是会话状态；每个子代理都拿到你选的那个。
-- **全局覆盖** — 一个 host 侧 `agent/request` 监听器覆盖 `subagent`、`subagent_fork` 与 workflow 扇出（任意深度）。
+- **全局覆盖** — host 侧选择覆盖 `subagent`、`subagent_fork` 与 workflow 扇出（任意深度）。
 - **思考程度** — 提供推理等级的模型（如 `off` / `high` / `max`）会有对应的「思考程度」菜单。
 - **默认继承** — 在你选择之前，子代理沿用主模型。
 - **按会话 + 持久** — 选择跟随会话，重启后仍保留。
@@ -40,10 +40,18 @@
 
 两个半区协作，完全不触碰 apiProxy 的 settings 白名单：
 
-1. **Host 半区**（`lib/index.js`）注册一个 `agent/request` 瀑布监听器。`dsh-scope`
-   允许事件**向上**冒泡，因此这个 host-root 监听器能看到所有 agent 的请求；子代理通过
-   `agent.options.subagentDepth >= 1` 识别。它沿父链走到根会话，只对子代理覆盖
+1. **Host 半区**（`lib/index.js`）注册 `agent/created` 与 `agent/inbox/inserted`
+   监听器，对子代理调用 `agent.model.select()`。`dsh-scope` 允许事件**向上**冒泡，因此
+   这个 host-root 监听器能看到所有 agent 的生命周期；子代理通过**持久化会话头**识别
+   （`origin === 'subagent'` 或 `delegationDepth >= 1`），冷恢复后依然成立——
+   `AgentOptions.subagentDepth` 则不行，因为恢复时子代理的 options 由 descriptor 重建、
+   并不包含该字段。它沿父链走到根会话，在根会话记录所选的
    `{ provider, model, reasoningEffort? }`。
+
+   选择必须发生在**步骤准备之前**：DSH 在步骤准备时冻结本步模型，随后才运行
+   （已废弃的）`agent/request` 瀑布，并拒绝在那里改动 provider/model/effort，报
+   `agent/request proposed "X" after step preparation fixed "Y"`。在更早的事件里调用
+   `agent.model.select()` 才是受支持的替代方式——本插件不再触碰 `agent/request`。
 
 2. **持久化 + 传输** 走一个 **Typert Remote 服务**（`subagent-model-picker`，wire 命名空间
    `subagent-model-picker`），暴露 `get` / `set` / `clear`。Client 半区挂载 Remote 贡献
@@ -94,12 +102,16 @@ dsh plugin --profile web add github:ringoage/dsh-subagent-model-picker
 
 ## 开发
 
-- `lib/index.js` — host 半区（Remote 服务 + `agent/request` 路由）。
+- `lib/index.js` — host 半区（Remote 服务 + 子代理模型选择）。
 - `lib/client.js` — client 半区（slot UI + Remote 贡献 + locale）。
 - `cordis.patch.yml` — 挂载插件行的 `dsh.bundle.patch` 插入层。
+- `test/host.test.mjs` — 回归测试（`npm test`，或 `node --test test/host.test.mjs`）。
 
 Remote 服务运行在 **SRC 模式**：方法用纯 JS 手动施加 `@Remote(name)` 契约（无需生成
 `typert.host.js`），client 贡献则手写 strict 描述符。
+
+host 侧改动只有**重启 DSH** 后才会被运行中的 harness 加载：profile loader 对每个插件模块
+只 import 一次，而 host 侧热重载监听的是 profile 配置，不是插件源码。
 
 ## License
 
