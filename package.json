@@ -1,6 +1,6 @@
 {
   "name": "dsh-subagent-model-picker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DSH web plugin: the visual, manual subagent-model picker beside the main model seat — predictable per-session routing with global coverage of every in-process subagent path, complementary to auto-routing plugins.",
   "type": "module",
   "main": "lib/index.js",
@@ -12,6 +12,9 @@
       "default": "./lib/client.js"
     },
     "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "node --test test/host.test.mjs"
   },
   "dsh": {
     "bundle": {
